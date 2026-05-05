@@ -23,7 +23,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Node 24 ships npm 11+, which has the OIDC Trusted Publisher
+          # client. Node 20 (npm 10) signs provenance via OIDC but doesn't
+          # use OIDC for the registry PUT, hence 404. Per npm docs:
+          # https://docs.npmjs.com/trusted-publishers#supported-cicd-providers
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
       - name: Install + build
         working-directory: typescript
@@ -37,10 +41,9 @@ jobs:
       - name: Publish to npm (via Trusted Publishing OIDC)
         if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
         working-directory: typescript
-        run: npm publish --access public --provenance
-        # No NODE_AUTH_TOKEN — relies entirely on the OIDC Trusted Publisher
-        # configured at npmjs.com/package/@crayonz-ai/sdk/access. If you ever
-        # remove the trusted publisher, add NODE_AUTH_TOKEN back here.
+        run: npm publish --access public
+        # --provenance is implied automatically by npm 11 when OIDC is
+        # active. No NODE_AUTH_TOKEN — pure OIDC.
 
   python:
     name: Publish crayonz
