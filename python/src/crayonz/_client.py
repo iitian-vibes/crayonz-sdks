@@ -16,9 +16,10 @@ DEFAULT_BASE_URLS = {
     "memes": "https://memeagent-199406543652.asia-south1.run.app",
     "content": "https://content-api-199406543652.asia-south1.run.app",
     "design": "https://design-api-199406543652.asia-south1.run.app",
+    "vto": "https://customapi-199406543652.asia-south1.run.app",
 }
 
-USER_AGENT = "crayonz-python-sdk/0.1.5"
+USER_AGENT = "crayonz-python-sdk/0.2.0"
 
 
 class _BaseClient:
@@ -182,6 +183,59 @@ class _DesignResource:
         return self._parent._request("design", "/api/quality/score", kwargs)
 
 
+class _VtoResource:
+    """Virtual Try-On resource. All endpoints are async — call ``get_task``
+    to poll for the result image once ``status == 'completed'``."""
+
+    def __init__(self, parent: "Client") -> None:
+        self._parent = parent
+
+    def try_on(self, *, user_photo: str, product_image: str, **kwargs: Any) -> dict:
+        """Single-pose try-on render. Returns ``{task_id, status, ...}``."""
+        body = {"userPhoto": user_photo, "productImage": product_image, **kwargs}
+        return self._parent._request("vto", "/v1/try-on", body)
+
+    def variations(self, *, user_photo: str, product_image: str, **kwargs: Any) -> dict:
+        """Multi-pose variations from a single user + product pair."""
+        body = {"userPhoto": user_photo, "productImage": product_image, **kwargs}
+        return self._parent._request("vto", "/v1/try-on/variations", body)
+
+    def size_recommendation(self, *, product_image: str, size_chart: dict, **kwargs: Any) -> dict:
+        """AI size recommendation from product image + size chart."""
+        body = {"productImage": product_image, "sizeChart": size_chart, **kwargs}
+        return self._parent._request("vto", "/v1/size-recommendation", body)
+
+    def complete_outfit(self, *, base_product_image: str, **kwargs: Any) -> dict:
+        """Suggest complementary pieces for a base product."""
+        body = {"baseProductImage": base_product_image, **kwargs}
+        return self._parent._request("vto", "/v1/complete-outfit", body)
+
+    def get_task(self, task_id: str) -> dict:
+        """Poll a VTO task by id. The base client only does POST, so this
+        method talks to the underlying httpx Client directly."""
+        if not task_id:
+            raise ValueError("task_id required")
+        # eslint-disable-next-line — internal access to base client
+        client: _BaseClient = self._parent  # type: ignore[assignment]
+        base = client._base_urls.get("vto")
+        url = f"{base}/v1/tasks/{task_id}"
+        headers = {
+            "X-API-Key": client._api_key,
+            "User-Agent": USER_AGENT,
+        }
+        if client._tag:
+            headers["X-Crayonz-Tag"] = client._tag
+        resp = client._http.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise CrayonzError(
+                f"VTO task fetch failed: {resp.status_code}",
+                status=resp.status_code,
+                body=resp.text,
+                endpoint=f"/v1/tasks/{task_id}",
+            )
+        return resp.json()
+
+
 class Client(_BaseClient):
     """Main entry point for the Crayonz API.
 
@@ -201,3 +255,4 @@ class Client(_BaseClient):
         self.memes = _MemesResource(self)
         self.content = _ContentResource(self)
         self.design = _DesignResource(self)
+        self.vto = _VtoResource(self)

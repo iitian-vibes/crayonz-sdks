@@ -9,18 +9,21 @@ import { ClientBase } from './client-base';
 import { MemesResource } from './resources/memes';
 import { ContentResource } from './resources/content';
 import { DesignResource } from './resources/design';
+import { VtoResource } from './resources/vto';
 import type { CrayonzOptions } from './types';
 
 export class Crayonz extends ClientBase {
   readonly memes: MemesResource;
   readonly content: ContentResource;
   readonly design: DesignResource;
+  readonly vto: VtoResource;
 
   constructor(opts: CrayonzOptions) {
     super(opts);
     this.memes = new MemesResource(opts);
     this.content = new ContentResource(opts);
     this.design = new DesignResource(opts);
+    this.vto = new VtoResource(opts);
   }
 }
 
@@ -45,4 +48,9 @@ export type {
   MockupRequest,
   CustomDesignRequest,
   QualityScoreRequest,
+  VtoTryOnRequest,
+  VtoVariationsRequest,
+  VtoSizeRecommendationRequest,
+  VtoCompleteOutfitRequest,
+  VtoTaskResponse,
 } from './types';
