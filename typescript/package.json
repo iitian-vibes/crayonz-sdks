@@ -1,0 +1,39 @@
+{
+  "name": "@crayonz-ai/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for the Crayonz AI API — meme, content, and design generation.",
+  "license": "MIT",
+  "homepage": "https://crayonz.ai/api-console",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iitian-vibes/crayonz-sdks.git",
+    "directory": "typescript"
+  },
+  "keywords": ["crayonz", "ai", "memes", "content-generation", "design-generation"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0"
+  }
+}

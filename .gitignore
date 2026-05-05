@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.tgz
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+*.whl
+.tox/
+.pytest_cache/
+.venv/
+venv/
+.test_venv/

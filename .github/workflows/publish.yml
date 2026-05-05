@@ -1,0 +1,62 @@
+name: Publish SDKs
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'If true, build but skip publishing'
+        required: false
+        default: 'false'
+
+jobs:
+  typescript:
+    name: Publish @crayonz-ai/sdk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install + build
+        working-directory: typescript
+        run: |
+          npm install
+          npm run build
+          npm run typecheck
+      - name: Show package contents
+        working-directory: typescript
+        run: npm pack --dry-run
+      - name: Publish to npm
+        if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
+        working-directory: typescript
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  python:
+    name: Publish crayonz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build tools
+        run: pip install --upgrade build twine
+      - name: Build wheel + sdist
+        working-directory: python
+        run: python -m build
+      - name: Twine check
+        working-directory: python
+        run: twine check dist/*
+      - name: Publish to PyPI
+        if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
+        working-directory: python
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
