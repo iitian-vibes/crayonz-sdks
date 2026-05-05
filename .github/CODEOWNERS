@@ -1,0 +1,17 @@
+# Auto-request review when these files change.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Workflow + release infrastructure — high blast radius
+.github/workflows/   @aivolvix
+.github/CODEOWNERS   @aivolvix
+.github/dependabot.yml @aivolvix
+
+# Security policy
+SECURITY.md          @aivolvix
+
+# Version manifests — touched on every release
+typescript/package.json   @aivolvix
+python/pyproject.toml     @aivolvix
+
+# Release helper
+scripts/bump.sh      @aivolvix
