@@ -12,4 +12,4 @@ from ._client import Client
 from ._exceptions import CrayonzError
 
 __all__ = ["Client", "CrayonzError"]
-__version__ = "0.1.1"
+__version__ = "0.1.2"

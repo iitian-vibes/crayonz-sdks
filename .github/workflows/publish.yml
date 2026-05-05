@@ -38,9 +38,9 @@ jobs:
         if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
         working-directory: typescript
         run: npm publish --access public --provenance
-        env:
-          # NPM_TOKEN kept as a fallback; Trusted Publishing takes priority when configured.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # No NODE_AUTH_TOKEN — relies entirely on the OIDC Trusted Publisher
+        # configured at npmjs.com/package/@crayonz-ai/sdk/access. If you ever
+        # remove the trusted publisher, add NODE_AUTH_TOKEN back here.
 
   python:
     name: Publish crayonz
@@ -67,5 +67,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: python/dist/
-          # Trusted Publishing is preferred. Token kept as fallback.
-          password: ${{ secrets.PYPI_TOKEN }}
+        # No password: — pypa/gh-action-pypi-publish auto-detects the
+        # OIDC Trusted Publisher configured at pypi.org/manage/project/crayonz/
+        # settings/publishing/. Setting `password` would override OIDC.
