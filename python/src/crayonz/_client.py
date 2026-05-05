@@ -18,7 +18,7 @@ DEFAULT_BASE_URLS = {
     "design": "https://design-api-199406543652.asia-south1.run.app",
 }
 
-USER_AGENT = "crayonz-python-sdk/0.1.0"
+USER_AGENT = "crayonz-python-sdk/0.1.1"
 
 
 class _BaseClient:
