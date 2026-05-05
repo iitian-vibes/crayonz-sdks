@@ -5,6 +5,7 @@ const DEFAULT_BASE_URLS: Required<ServiceUrls> = {
   memes: 'https://memeagent-199406543652.asia-south1.run.app',
   content: 'https://content-api-199406543652.asia-south1.run.app',
   design: 'https://design-api-199406543652.asia-south1.run.app',
+  vto: 'https://customapi-199406543652.asia-south1.run.app',
 };
 
 export type ServiceKey = keyof ServiceUrls;

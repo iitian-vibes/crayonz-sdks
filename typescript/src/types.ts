@@ -108,11 +108,41 @@ export interface QualityScoreRequest {
   design_url: string;
 }
 
+// ─── Virtual Try-On (VTO) ───────────────────────────────────
+export interface VtoTryOnRequest {
+  userPhoto: string;
+  productImage: string;
+  customPrompt?: string;
+  webhookUrl?: string;
+}
+export interface VtoVariationsRequest extends VtoTryOnRequest {
+  posePresets?: string[];
+}
+export interface VtoSizeRecommendationRequest {
+  productImage: string;
+  sizeChart: Record<string, unknown>;
+  userMeasurements?: Record<string, unknown>;
+}
+export interface VtoCompleteOutfitRequest {
+  baseProductImage: string;
+  catalogImages?: string[];
+}
+export interface VtoTaskResponse {
+  task_id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  result_image?: string | null;
+  result_images?: string[];
+  reel_url?: string | null;
+  error?: string | null;
+}
+
 // ─── Client config ──────────────────────────────────────────
 export interface ServiceUrls {
   memes?: string;
   content?: string;
   design?: string;
+  /** customapi backend that serves VTO endpoints. */
+  vto?: string;
 }
 
 export interface CrayonzOptions {

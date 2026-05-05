@@ -6,6 +6,21 @@ The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), 
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-05
+
+### Added
+- **VTO resource** (`client.vto.*` / `client.vto.*` in Python). Mirrors the §1.4 unification on the backend — VTO now authenticates with the same `cz_live_*` keys as everything else.
+  - `try_on(user_photo, product_image, ...)` / `tryOn({ userPhoto, productImage })`
+  - `variations(...)` — multi-pose
+  - `size_recommendation(...)` / `sizeRecommendation(...)`
+  - `complete_outfit(...)` / `completeOutfit(...)`
+  - `get_task(task_id)` / `getTask(taskId)` — poll async results
+- New types: `VtoTryOnRequest`, `VtoVariationsRequest`, `VtoSizeRecommendationRequest`, `VtoCompleteOutfitRequest`, `VtoTaskResponse` (TypeScript exported; Python uses dicts).
+- `ServiceUrls.vto` for self-hosted overrides.
+
+### Changed
+- `DEFAULT_BASE_URLS` (both languages) gains a `vto` entry pointing at the customapi Cloud Run service.
+
 ## [0.1.5] — 2026-05-05
 
 ### Added
