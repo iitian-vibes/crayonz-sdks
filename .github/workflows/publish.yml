@@ -15,6 +15,10 @@ jobs:
   typescript:
     name: Publish @crayonz-ai/sdk
     runs-on: ubuntu-latest
+    permissions:
+      # Required for npm Trusted Publishing (OIDC) — no NPM_TOKEN secret needed.
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,16 +34,21 @@ jobs:
       - name: Show package contents
         working-directory: typescript
         run: npm pack --dry-run
-      - name: Publish to npm
+      - name: Publish to npm (via Trusted Publishing OIDC)
         if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
         working-directory: typescript
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
+          # NPM_TOKEN kept as a fallback; Trusted Publishing takes priority when configured.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   python:
     name: Publish crayonz
     runs-on: ubuntu-latest
+    permissions:
+      # Required for PyPI Trusted Publishing (OIDC) — no PYPI_TOKEN secret needed.
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,10 +62,10 @@ jobs:
       - name: Twine check
         working-directory: python
         run: twine check dist/*
-      - name: Publish to PyPI
+      - name: Publish to PyPI (via Trusted Publishing OIDC)
         if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
-        working-directory: python
-        run: twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/
+          # Trusted Publishing is preferred. Token kept as fallback.
+          password: ${{ secrets.PYPI_TOKEN }}
