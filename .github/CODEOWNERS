@@ -1,0 +1,21 @@
+# Auto-request review when these files change.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Both maintainers are listed — GitHub treats this as "any one of them"
+# satisfies the code-owner-review rule, so either Arun or Anurag can
+# approve the other's PRs and unblock merging.
+
+# Workflow + release infrastructure — high blast radius
+.github/workflows/         @Arun-Raghav-S @anurag161
+.github/CODEOWNERS         @Arun-Raghav-S @anurag161
+.github/dependabot.yml     @Arun-Raghav-S @anurag161
+
+# Security policy
+SECURITY.md                @Arun-Raghav-S @anurag161
+
+# Version manifests — touched on every release
+typescript/package.json    @Arun-Raghav-S @anurag161
+python/pyproject.toml      @Arun-Raghav-S @anurag161
+
+# Release helper
+scripts/bump.sh            @Arun-Raghav-S @anurag161
