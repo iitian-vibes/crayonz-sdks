@@ -12,6 +12,7 @@ from crayonz import (
     RateLimitError,
     ValidationError,
 )
+from crayonz import CrayonzError
 
 BASE = "https://api.crayonz.ai"
 
@@ -185,3 +186,49 @@ def test_designs_create_default_is_async_no_query():
     with Client(api_key="cz_test_abc") as client:
         client.designs.create(idea="a logo")
     assert "async" not in route.calls[0].request.url.params
+
+
+@respx.mock
+def test_post_is_never_resent_after_a_5xx():
+    """A 5xx on a POST may mean the job already ran and was billed — resending
+    would bill it twice. Only GET/DELETE retry 5xx."""
+    route = respx.post(f"{BASE}/api/design/custom").mock(return_value=httpx.Response(500, json={"status": "error"}))
+    with Client(api_key="cz_test_abc", max_retries=2) as client:
+        with pytest.raises(APIError):
+            client.designs.create(idea="x")
+    assert route.call_count == 1
+
+
+@respx.mock
+def test_post_is_never_resent_after_a_read_timeout():
+    route = respx.post(f"{BASE}/api/design/custom").mock(side_effect=httpx.ReadTimeout("slow"))
+    with Client(api_key="cz_test_abc", max_retries=2) as client:
+        with pytest.raises(CrayonzError):
+            client.designs.create(idea="x")
+    assert route.call_count == 1
+
+
+@respx.mock
+def test_post_still_retries_a_429(no_sleep):
+    route = respx.post(f"{BASE}/api/design/custom").mock(
+        side_effect=[
+            httpx.Response(429, json={"status": "error"}, headers={"retry-after": "0"}),
+            httpx.Response(202, json={"status": "queued", "job_id": "j1", "poll_url": "/api/jobs/j1"}),
+        ]
+    )
+    with Client(api_key="cz_test_abc", max_retries=2) as client:
+        out = client.designs.create(idea="x")
+    assert out["job_id"] == "j1" and route.call_count == 2
+
+
+@respx.mock
+def test_webhooks_create_list_delete():
+    create = respx.post(f"{BASE}/api/webhooks").mock(return_value=httpx.Response(201, json={"status": "ok", "webhook": {"id": "w1"}, "secret": "s"}))
+    listing = respx.get(f"{BASE}/api/webhooks").mock(return_value=httpx.Response(200, json={"status": "ok", "events": [], "webhooks": [{"id": "w1"}]}))
+    delete = respx.delete(f"{BASE}/api/webhooks/w1").mock(return_value=httpx.Response(200, json={"status": "ok", "id": "w1", "revoked": True}))
+    with Client(api_key="cz_test_abc") as client:
+        assert client.webhooks.create("https://example.com/h", events=["payment.completed"])["secret"] == "s"
+        assert client.webhooks.list()["webhooks"][0]["id"] == "w1"
+        assert client.webhooks.delete("w1")["revoked"] is True
+    import json as _json
+    assert _json.loads(create.calls[0].request.content) == {"url": "https://example.com/h", "events": ["payment.completed"]}

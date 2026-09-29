@@ -96,15 +96,29 @@ try {
 }
 ```
 
-429s and 5xx responses are retried automatically (exponential backoff +
-jitter, honouring `Retry-After`) up to `maxRetries` times before a
-`RateLimitError`/`APIError` is thrown. Other 4xx responses are never
-retried.
+Reads (`GET`, `DELETE`) are retried on 429, 5xx and network errors
+(exponential backoff + jitter, honouring `Retry-After`) up to `maxRetries` times.
+**Requests that create work (`POST`) are retried only on 429**, because a 429
+is rejected before anything runs — after a timeout or a 5xx the job may
+already be running and charged, and resending it could charge you twice. For
+a design, poll `jobs.get` instead of resubmitting. Other 4xx responses are
+never retried.
 
 ## Webhooks
 
-Register an HTTPS URL in the console. Every delivery is a POST with the
-event name in `X-Crayonz-Event` and an HMAC-SHA256 hex digest of the raw
+Register an HTTPS endpoint from code (Starter plan and above, up to 5) or in the console:
+
+```ts
+const { webhook, secret } = await client.webhooks.create({
+  url: 'https://example.com/crayonz',
+  events: ['payment.completed', 'usage.threshold'],
+});
+// store `secret` — it is shown once. Later:
+await client.webhooks.list();
+await client.webhooks.delete(webhook.id);
+```
+
+Every delivery is a POST with the event name in `X-Crayonz-Event` and an HMAC-SHA256 hex digest of the raw
 body, keyed on your webhook secret, in `X-Crayonz-Signature`. Verify it
 before trusting the payload:
 

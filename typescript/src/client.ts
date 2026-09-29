@@ -17,7 +17,7 @@ const DEFAULT_MAX_RETRIES = 2;
 const VERSION = '0.2.0';
 export const USER_AGENT = `crayonz-node/${VERSION}`;
 
-export type HttpMethod = 'GET' | 'POST';
+export type HttpMethod = 'GET' | 'POST' | 'DELETE';
 
 export interface RequestOptions {
   body?: unknown;
@@ -120,7 +120,7 @@ export class Crayonz {
     this.tryOn = new TryOnResource(this);
     this.sizing = new SizingResource(this);
     this.outfits = new OutfitsResource(this);
-    this.webhooks = new WebhooksResource();
+    this.webhooks = new WebhooksResource(this);
   }
 
   /**
@@ -140,6 +140,12 @@ export class Crayonz {
     if (this.tag) headers['X-Crayonz-Tag'] = this.tag;
     if (method === 'POST') headers['Content-Type'] = 'application/json';
 
+    // A POST creates work and spends credits. If it timed out or the server
+    // answered 5xx, the job may already be running and charged — sending it
+    // again would run and bill it twice. So POSTs only retry a 429, which the
+    // rate limiter answers before any work is done. GET/DELETE are safe to
+    // repeat and retry on 429, 5xx and network errors.
+    const idempotent = method !== 'POST';
     let attempt = 0;
     // eslint-disable-next-line no-constant-condition
     for (;;) {
@@ -157,7 +163,7 @@ export class Crayonz {
       } catch (err) {
         clearTimeout(timer);
         const isAbort = err instanceof Error && err.name === 'AbortError';
-        if (attempt < this.maxRetries) {
+        if (idempotent && attempt < this.maxRetries) {
           attempt++;
           await sleep(backoffMs(attempt - 1));
           continue;
@@ -182,7 +188,7 @@ export class Crayonz {
       if (resp.ok) return parsed as T;
 
       const retryAfterMs = parseRetryAfter(resp.headers.get('retry-after'));
-      const isRetryable = resp.status === 429 || resp.status >= 500;
+      const isRetryable = resp.status === 429 || (idempotent && resp.status >= 500);
 
       if (isRetryable && attempt < this.maxRetries) {
         attempt++;

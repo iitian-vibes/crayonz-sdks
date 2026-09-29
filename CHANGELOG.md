@@ -32,6 +32,14 @@ never the sold product — this release replaces it end to end.
 
 ### Added
 
+- **`webhooks.create` / `list` / `delete`** — manage delivery endpoints with
+  your API key (`GET/POST /api/webhooks`, `DELETE /api/webhooks/{id}`;
+  Starter plan and above, up to 5). `create` returns the signing secret once.
+- **POST requests are never resent after a timeout or 5xx.** A POST creates
+  work and spends credits; if it timed out or the server answered 5xx the job
+  may already be running and billed, so resending could bill it twice. POSTs
+  retry only a 429 (and, in Python, a connection that never opened). GET and
+  DELETE retry 429, 5xx and network errors.
 - **`designs`** — `create` (async 202 by default, or `sync=True`/`{sync:true}`
   for `?async=0`), `createAndWait`/`create_and_wait`, `list`, `get`. Wraps
   `POST /api/design/custom`, `GET /api/designs`, `GET /api/designs/{id}`.

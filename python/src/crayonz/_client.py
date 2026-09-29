@@ -104,6 +104,12 @@ class _Transport:
         headers = self._headers(method)
         clean_query = {k: v for k, v in (query or {}).items() if v is not None}
 
+        # A POST creates work and spends credits. If it timed out or the server
+        # answered 5xx, the job may already be running and charged — sending it
+        # again would run and bill it twice. So POSTs only retry a 429 (the rate
+        # limiter answers before any work) or a connection that never opened.
+        # GET/DELETE are safe to repeat and retry on 429, 5xx and network errors.
+        idempotent = method != "POST"
         attempt = 0
         while True:
             try:
@@ -114,8 +120,15 @@ class _Transport:
                     params=clean_query or None,
                     json=body if method == "POST" else None,
                 )
-            except httpx.TimeoutException as exc:
+            except httpx.ConnectError as exc:
+                # Nothing reached the server, so even a POST is safe to resend.
                 if attempt < self._max_retries:
+                    time.sleep(_backoff_seconds(attempt))
+                    attempt += 1
+                    continue
+                raise CrayonzError(f"Network error: {exc}", status=0, body=None, endpoint=path) from exc
+            except httpx.TimeoutException as exc:
+                if (idempotent or isinstance(exc, httpx.ConnectTimeout)) and attempt < self._max_retries:
                     time.sleep(_backoff_seconds(attempt))
                     attempt += 1
                     continue
@@ -123,7 +136,7 @@ class _Transport:
                     f"Request timed out after {self._timeout}s", status=0, body=None, endpoint=path
                 ) from exc
             except httpx.HTTPError as exc:
-                if attempt < self._max_retries:
+                if idempotent and attempt < self._max_retries:
                     time.sleep(_backoff_seconds(attempt))
                     attempt += 1
                     continue
@@ -138,7 +151,7 @@ class _Transport:
                 return parsed
 
             retry_after = _parse_retry_after(resp.headers.get("retry-after"))
-            is_retryable = resp.status_code == 429 or resp.status_code >= 500
+            is_retryable = resp.status_code == 429 or (idempotent and resp.status_code >= 500)
 
             if is_retryable and attempt < self._max_retries:
                 time.sleep(retry_after if retry_after is not None else _backoff_seconds(attempt))
@@ -205,7 +218,7 @@ class Client:
         self.try_on = TryOnResource(self._transport)
         self.sizing = SizingResource(self._transport)
         self.outfits = OutfitsResource(self._transport)
-        self.webhooks = _WebhooksResource()
+        self.webhooks = _WebhooksResource(self._transport)
 
     def close(self) -> None:
         self._transport.close()
@@ -218,9 +231,28 @@ class Client:
 
 
 class _WebhooksResource:
-    """Instance-bound wrapper so ``client.webhooks.verify(...)`` reads
-    naturally alongside the other resources, even though verification is
-    local-only and makes no network call."""
+    """Register, list and remove webhooks (Starter plan and above, up to 5),
+    and verify deliveries. ``verify`` is local-only and makes no network call."""
+
+    def __init__(self, transport: Any) -> None:
+        self._transport = transport
+
+    def list(self) -> Any:
+        """Active webhooks on your account, plus the event names you can subscribe to."""
+        return self._transport.request("GET", "/api/webhooks")
+
+    def create(self, url: str, events: Optional[list] = None) -> Any:
+        """Register an HTTPS endpoint. The response's ``secret`` is shown ONCE —
+        store it to verify deliveries. ``events`` defaults to all three
+        (usage.threshold, payment.completed, plan.activated); ``["*"]`` also means all."""
+        body: dict = {"url": url}
+        if events is not None:
+            body["events"] = events
+        return self._transport.request("POST", "/api/webhooks", body=body)
+
+    def delete(self, webhook_id: str) -> Any:
+        """Stop deliveries to a webhook."""
+        return self._transport.request("DELETE", f"/api/webhooks/{webhook_id}")
 
     def verify(self, raw_body, signature, secret) -> bool:  # type: ignore[no-untyped-def]
         return verify_webhook_signature(raw_body, signature, secret)

@@ -204,3 +204,47 @@ describe('query params', () => {
     expect(calls[0].url).toContain('limit=10');
   });
 });
+
+describe('POST retry safety', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('never resends a POST after a 5xx — the job may already be running and billed', async () => {
+    const { fn, calls } = mockFetch([{ status: 500, body: { status: 'error' } }]);
+    const client = new Crayonz({ apiKey: 'cz_test_abc', fetch: fn, maxRetries: 2 });
+    const p = client.designs.create({ idea: 'x' });
+    const assertion = expect(p).rejects.toBeInstanceOf(APIError);
+    await vi.runAllTimersAsync();
+    await assertion;
+    expect(calls.length).toBe(1);
+  });
+
+  it('still retries a POST that got 429 (rejected before any work)', async () => {
+    const { fn, calls } = mockFetch([
+      { status: 429, body: { status: 'error' }, headers: { 'retry-after': '0' } },
+      { status: 202, body: { status: 'queued', job_id: 'j1', poll_url: '/api/jobs/j1' } },
+    ]);
+    const client = new Crayonz({ apiKey: 'cz_test_abc', fetch: fn, maxRetries: 2 });
+    const p = client.designs.create({ idea: 'x' });
+    await vi.runAllTimersAsync();
+    expect(await p).toMatchObject({ job_id: 'j1' });
+    expect(calls.length).toBe(2);
+  });
+});
+
+describe('webhooks management', () => {
+  it('creates, lists and deletes', async () => {
+    const { fn, calls } = mockFetch([
+      { status: 201, body: { status: 'ok', webhook: { id: 'w1' }, secret: 's' } },
+      { status: 200, body: { status: 'ok', events: [], webhooks: [{ id: 'w1' }] } },
+      { status: 200, body: { status: 'ok', id: 'w1', revoked: true } },
+    ]);
+    const client = new Crayonz({ apiKey: 'cz_test_abc', fetch: fn });
+    expect((await client.webhooks.create({ url: 'https://example.com/h', events: ['payment.completed'] })).secret).toBe('s');
+    expect((await client.webhooks.list()).webhooks[0].id).toBe('w1');
+    expect((await client.webhooks.delete('w1')).revoked).toBe(true);
+    expect(calls.map((c) => c.init.method)).toEqual(['POST', 'GET', 'DELETE']);
+    expect(calls[2].url).toContain('/api/webhooks/w1');
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({ url: 'https://example.com/h', events: ['payment.completed'] });
+  });
+});
