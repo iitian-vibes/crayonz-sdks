@@ -6,7 +6,13 @@ The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), 
 
 ## [Unreleased]
 
-## [0.2.0] — 2026-09-29
+## [0.2.1] — 2026-09-29
+
+First published release of the 0.2 line. A `v0.2.0` tag exists but points at
+the old 0.1.5 code by mistake and never published (both registries rejected or
+cancelled it; the repo protects tags from deletion), so 0.2.0 is skipped.
+Everything below shipped in 0.2.1.
+
 
 Full rebuild around the **real, currently-live public API** at
 `https://api.crayonz.ai` (see https://crayonz.ai/api/docs and the OpenAPI

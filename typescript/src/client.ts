@@ -14,7 +14,7 @@ import { WebhooksResource } from './resources/webhooks';
 export const DEFAULT_BASE_URL = 'https://api.crayonz.ai';
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_RETRIES = 2;
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 export const USER_AGENT = `crayonz-node/${VERSION}`;
 
 export type HttpMethod = 'GET' | 'POST' | 'DELETE';

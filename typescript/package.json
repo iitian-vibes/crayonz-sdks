@@ -1,6 +1,6 @@
 {
   "name": "@crayonz-ai/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official TypeScript SDK for the Crayonz AI API — print-ready AI design generation, garment mockups, model/product photoshoots, and virtual try-on.",
   "license": "MIT",
   "homepage": "https://crayonz.ai/api-console",

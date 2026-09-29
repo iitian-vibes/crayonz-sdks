@@ -173,7 +173,7 @@ editor's autocomplete.
 
 ## Migrating from 0.1.x
 
-0.2.0 is a full rebuild targeting the *current* public API
+0.2.1 (the first 0.2 release) is a full rebuild targeting the *current* public API
 (`api.crayonz.ai`) instead of the old internal meme/content/design services.
 The meme, blog and Instagram-content resources (`client.memes`,
 `client.content`) are **removed** — they were never part of the public

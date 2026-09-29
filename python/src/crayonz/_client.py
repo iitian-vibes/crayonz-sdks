@@ -20,7 +20,7 @@ from ._webhooks import verify_webhook_signature
 DEFAULT_BASE_URL = "https://api.crayonz.ai"
 DEFAULT_TIMEOUT = 60.0
 DEFAULT_MAX_RETRIES = 2
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 USER_AGENT = f"crayonz-python/{VERSION}"
 
 
