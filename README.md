@@ -7,15 +7,16 @@ Official client libraries for the [Crayonz AI](https://crayonz.ai) API.
 | TypeScript / JavaScript | [`@crayonz-ai/sdk`](https://www.npmjs.com/package/@crayonz-ai/sdk) | `npm install @crayonz-ai/sdk` |
 | Python | [`crayonz`](https://pypi.org/project/crayonz/) | `pip install crayonz` |
 
-Both SDKs cover the full Crayonz API: meme generation, content (blog/Instagram), and design pipeline (trends, generate, mockups, scoring, custom variations).
+Both SDKs cover the full public Crayonz API (`api.crayonz.ai`): print-ready AI design generation, garment mockups, model/product photoshoots, and virtual try-on. See the live reference at https://crayonz.ai/api/docs.
 
 ## TypeScript
 
 ```ts
 import { Crayonz } from '@crayonz-ai/sdk';
 
-const client = new Crayonz({ apiKey: process.env.CRAYONZ_API_KEY! });
-const memes = await client.memes.generate({ topic: 'coding', count: 3 });
+const client = new Crayonz({ apiKey: process.env.CRAYONZ_API_KEY });
+const design = await client.designs.createAndWait({ idea: 'Retro skate shop logo' });
+const mockup = await client.mockups.render({ design_url: design.file_url, garment: 'tshirt' });
 ```
 
 Full docs: [`typescript/README.md`](./typescript/README.md)
@@ -26,7 +27,8 @@ Full docs: [`typescript/README.md`](./typescript/README.md)
 from crayonz import Client
 
 client = Client(api_key="cz_live_...")
-memes = client.memes.generate(topic="coding", count=3)
+design = client.designs.create_and_wait(idea="Retro skate shop logo")
+mockup = client.mockups.render(design_url=design["file_url"], garment="tshirt")
 ```
 
 Full docs: [`python/README.md`](./python/README.md)
@@ -56,7 +58,8 @@ If you'd rather edit by hand, **bump these four files together** so npm and PyPI
 | `typescript/package.json` | `"version": "X.Y.Z"` |
 | `python/pyproject.toml` | `version = "X.Y.Z"` |
 | `python/src/crayonz/__init__.py` | `__version__ = "X.Y.Z"` |
-| `python/src/crayonz/_client.py` | `USER_AGENT = "crayonz-python-sdk/X.Y.Z"` |
+| `python/src/crayonz/_client.py` | `VERSION = "X.Y.Z"` |
+| `typescript/src/client.ts` | `VERSION = 'X.Y.Z'` |
 
 Then:
 
@@ -100,10 +103,10 @@ gh run watch --repo iitian-vibes/crayonz-sdks
 
 ### Pre-release checklist (paste into PR description)
 
-- [ ] All four version files bumped to the same number
+- [ ] All five version files bumped to the same number
 - [ ] Bumped version is **higher** than `crayonz` on PyPI and `@crayonz-ai/sdk` on npm — neither registry allows re-publishing the same version
 - [ ] `CHANGELOG.md` has an entry for the new version
-- [ ] If you added a new endpoint: `typescript/src/types.ts` + `typescript/src/resources/*.ts` + `python/src/crayonz/_client.py` all updated
+- [ ] If you added a new endpoint: `typescript/src/types.ts` + `typescript/src/resources/*.ts` + `python/src/crayonz/resources/*.py` all updated, plus a test for it in both languages
 - [ ] Local smoke test passes: `cd typescript && npm install && npm run build && npm run typecheck`
 - [ ] Local smoke test passes: `cd python && python -m build && twine check dist/*`
 

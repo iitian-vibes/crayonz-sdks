@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bump the SDK version across all four files, commit, tag, and push.
+# Bump the SDK version across all five files, commit, tag, and push.
 #
 # Usage:
 #   ./scripts/bump.sh patch    # 0.1.5 → 0.1.6
@@ -69,14 +69,16 @@ fi
 sed "${SED_INPLACE[@]}" "s/\"version\": \"$current\"/\"version\": \"$new\"/" typescript/package.json
 sed "${SED_INPLACE[@]}" "s/version = \"$current\"/version = \"$new\"/" python/pyproject.toml
 sed "${SED_INPLACE[@]}" "s/__version__ = \"$current\"/__version__ = \"$new\"/" python/src/crayonz/__init__.py
-sed "${SED_INPLACE[@]}" "s|crayonz-python-sdk/$current|crayonz-python-sdk/$new|" python/src/crayonz/_client.py
+sed "${SED_INPLACE[@]}" "s/VERSION = \"$current\"/VERSION = \"$new\"/" python/src/crayonz/_client.py
+sed "${SED_INPLACE[@]}" "s/VERSION = '$current'/VERSION = '$new'/" typescript/src/client.ts
 
-# ─── Verify all four files updated ───────────────────────────────
+# ─── Verify all five files updated ───────────────────────────────
 echo "--- Verification ---"
 grep '"version"' typescript/package.json | head -1
 grep '^version' python/pyproject.toml | head -1
 grep '__version__' python/src/crayonz/__init__.py
-grep 'USER_AGENT' python/src/crayonz/_client.py
+grep '^VERSION' python/src/crayonz/_client.py
+grep '^const VERSION' typescript/src/client.ts
 
 if ! grep -q "\"version\": \"$new\"" typescript/package.json; then
   echo "ERROR: typescript/package.json was not updated" >&2

@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "crayonz"
-version = "0.1.5"
-description = "Official Python SDK for the Crayonz AI API — meme, content, and design generation."
+version = "0.2.1"
+description = "Official Python SDK for the Crayonz AI API — print-ready AI design generation, garment mockups, model/product photoshoots, and virtual try-on."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
   { name = "Aivolvix Technologies", email = "support@crayonz.ai" }
 ]
-keywords = ["crayonz", "ai", "memes", "content-generation", "design-generation"]
+keywords = ["crayonz", "ai", "design-generation", "print-on-demand", "virtual-try-on", "mockups"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -29,6 +29,9 @@ dependencies = [
   "httpx>=0.25",
   "typing-extensions>=4.5; python_version < '3.11'",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=7.4", "respx>=0.21"]
 
 [project.urls]
 Homepage = "https://crayonz.ai/api-console"
