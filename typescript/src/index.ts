@@ -2,47 +2,65 @@
 //
 // Quickstart:
 //   import { Crayonz } from '@crayonz-ai/sdk';
-//   const client = new Crayonz({ apiKey: process.env.CRAYONZ_API_KEY! });
-//   const memes = await client.memes.generate({ topic: 'coding', count: 3 });
+//   const client = new Crayonz({ apiKey: process.env.CRAYONZ_API_KEY });
+//   const design = await client.designs.createAndWait({ idea: 'Retro skate shop logo' });
+//   const mockup = await client.mockups.render({ design_url: design.file_url, garment: 'tshirt' });
 
-import { ClientBase } from './client-base';
-import { MemesResource } from './resources/memes';
-import { ContentResource } from './resources/content';
-import { DesignResource } from './resources/design';
-import type { CrayonzOptions } from './types';
+export { Crayonz, DEFAULT_BASE_URL } from './client';
 
-export class Crayonz extends ClientBase {
-  readonly memes: MemesResource;
-  readonly content: ContentResource;
-  readonly design: DesignResource;
+export {
+  CrayonzError,
+  APIError,
+  AuthenticationError,
+  InsufficientCreditsError,
+  RateLimitError,
+  ValidationError,
+} from './errors';
 
-  constructor(opts: CrayonzOptions) {
-    super(opts);
-    this.memes = new MemesResource(opts);
-    this.content = new ContentResource(opts);
-    this.design = new DesignResource(opts);
-  }
-}
+export { verifyWebhookSignature } from './resources/webhooks';
 
-export { CrayonzError } from './api-error';
+export type { JobWaitOptions } from './resources/jobs';
+export type { TaskWaitOptions } from './resources/tasks';
+export type { DesignsCreateOptions } from './resources/designs';
+
 export type {
   CrayonzOptions,
-  ServiceUrls,
-  Tone,
-  MemeFormat,
-  MemeGenerateRequest,
-  MemeGenerateResponse,
-  MemeResult,
-  BlogGenerateRequest,
-  BlogGenerateResponse,
-  InstagramPostRequest,
-  InstagramReelRequest,
-  InstagramGeneralRequest,
-  TrendsRequest,
-  TrendsResponse,
-  DesignGenerateRequest,
-  DesignGenerateResponse,
-  MockupRequest,
-  CustomDesignRequest,
+  DesignCustomRequest,
+  DesignCustomResult,
+  DesignReferences,
+  JobQueuedResponse,
+  JobStatus,
+  JobStatusValue,
+  JobGetResponse,
+  DesignRow,
+  DesignsListRequest,
+  DesignsListResponse,
+  DesignGetResponse,
+  MockupRenderRequest,
+  MockupRenderResult,
   QualityScoreRequest,
+  QualityScores,
+  QualityScoreResult,
+  PhotoshootSide,
+  PhotoshootModelRequest,
+  PhotoshootModelShot,
+  PhotoshootModelResult,
+  PhotoshootProductRequest,
+  PhotoshootProductShot,
+  PhotoshootProductResult,
+  RecommendVibesRequest,
+  VibeRecommendation,
+  RecommendVibesResult,
+  TryOnRequest,
+  PosePreset,
+  TryOnVariationsRequest,
+  TaskStatusValue,
+  TaskQueuedResponse,
+  TaskResultImage,
+  TaskGetResponse,
+  SizeRecommendationRequest,
+  SizeRecommendationResult,
+  CompleteOutfitRequest,
+  OutfitSuggestion,
+  CompleteOutfitResult,
 } from './types';

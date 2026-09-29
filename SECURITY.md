@@ -1,6 +1,6 @@
 # Security Audit — Crayonz SDKs
 
-Last reviewed: **2026-05-05** (initial audit at v0.1.5).
+Last reviewed: **2026-09-29** (rebuild audit at v0.2.0; initial audit was 2026-05-05 at v0.1.5).
 
 This document explains the publishing trust model, what is and isn't exposed by these SDK packages, and a checklist of things to keep doing (or never do) so the next maintainer doesn't accidentally leak something.
 
@@ -51,7 +51,7 @@ Inspect with `npm pack --dry-run` from `typescript/`. Tarball contains:
 
 Inspect with `python -m build` from `python/`. Wheel contains:
 
-- `crayonz/__init__.py`, `crayonz/_client.py`, `crayonz/_exceptions.py` (the package)
+- `crayonz/__init__.py`, `crayonz/_client.py`, `crayonz/_exceptions.py`, `crayonz/_webhooks.py`, `crayonz/resources/*.py` (the package)
 - `crayonz-X.Y.Z.dist-info/` (PyPI metadata)
 
 **Excluded** (via `pyproject.toml` `tool.hatch.build.targets`): `tests/`, `dist/`, `.pytest_cache/`, etc.
@@ -70,8 +70,8 @@ These are visible on github.com/iitian-vibes/crayonz-sdks. None of them contain 
 
 ### What IS in the SDK (and is fine to be public)
 
-- **Cloud Run service URLs** (`memeagent-199406543652.asia-south1.run.app`, etc.). These are publicly addressable URLs by design — anyone on the internet could discover them. They're guarded by API key auth (`X-API-Key`), so exposing the URL leaks nothing. When the API moves to a proxied gateway (`api.crayonz.ai`), update the SDK defaults.
-- **Endpoint paths** (`/generate`, `/api/blog/generate`, etc.). Already public via the OpenAPI spec at https://crayonz.ai/api/openapi.
+- **The single gateway URL** (`https://api.crayonz.ai`, `workers/api-gateway`). Public by design — it's the documented base URL at https://crayonz.ai/api/docs.
+- **Endpoint paths** (`/api/design/custom`, `/api/mockup/render`, `/v1/try-on`, etc.). Already public via the OpenAPI spec at https://crayonz.ai/api/openapi.
 - **Type/field names** (`tone`, `count`, `meme_format`). Public by design — they're the developer-facing API.
 - **The User-Agent string** (`@crayonz-ai/sdk` / `crayonz-python-sdk/X.Y.Z`). Useful for debugging, no security impact.
 - **Header names** we send: `X-API-Key`, `X-Crayonz-Tag`, `Content-Type`, `User-Agent`. None are secret.
@@ -229,9 +229,12 @@ git config --global tag.gpgsign true
 
 So tags can be verified as coming from a specific human. npm's provenance covers the workflow run; signed tags cover the input commit.
 
-### 8. Move to `api.crayonz.ai` gateway (longer term)
+### 8. ~~Move to `api.crayonz.ai` gateway~~ — done (v0.2.0)
 
-Eventually wrap the three Cloud Run services behind a single `api.crayonz.ai` domain. The SDK already supports `baseUrls` override; default-pointing it at the gateway makes service URL changes invisible to users and simplifies docs.
+v0.2.0 rebuilt both SDKs around the single `https://api.crayonz.ai` gateway
+(`workers/api-gateway`), replacing the old per-service Cloud Run URLs
+(`memeagent-*`, `content-api-*`, `design-api-*`, `customapi-*`). `baseUrl`
+(TS) / `base_url` (Python) still overrides it for a proxy or staging setup.
 
 ---
 
@@ -250,3 +253,4 @@ If you find a security issue with the SDK or this publishing setup:
 | Date | Reviewer | Version | Notes |
 |---|---|---|---|
 | 2026-05-05 | initial setup | v0.1.5 | OIDC Trusted Publishing live on both registries; no repo secrets; provenance attestation enabled |
+| 2026-09-29 | rebuild | v0.2.0 | Full rebuild against the real public API (single `api.crayonz.ai` gateway); no publishing/trust-model changes — still zero repo secrets, still OIDC-only |
